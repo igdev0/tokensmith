@@ -3,19 +3,22 @@ import "./page.scss";
 import {FormEvent, forwardRef, PropsWithChildren, Ref, useImperativeHandle, useRef, useState} from 'react';
 import {Button, Container, Flex, Heading, Switch, Text, TextArea, TextField} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
+import RpcContextProvider from '@/app/context/config';
+import SelectWalletButton from '@/app/components/select-wallet-button';
+import {WalletProvider} from '@solana/wallet-adapter-react';
+import Navbar from '@/app/components/navbar';
 
 function Main(props: PropsWithChildren) {
   return (
       <main className="main min-h-screen w-full">
-        <main className="fixed h-full w-full">
+        <div className="fixed h-full w-full -z-10">
           <div className="fixed h-full pointer-events-none w-full bg"/>
           <div className="circle circle--xl circle--blue circle--left"/>
           <div className="circle circle--xl circle--green circle--right"/>
           <div className="circle circle--xl circle--purple circle--bottom-center"/>
-        </main>
-        <div className="z-10 absolute h-full w-full overflow-auto">
-          {props.children}
         </div>
+        <Navbar/>
+        {props.children}
       </main>
   );
 }
@@ -122,96 +125,106 @@ export default function Home() {
   };
 
   return (
-      <Main>
-        <Container className="h-full flex flex-col justify-center">
-          <Heading className="mt-5" size="8">Create token</Heading>
-          <Text>
-            <p className="max-w-xl">
-              This is a simple solution for creating a new token and its metadata. Fill in the required fields and press
-              submit.
-            </p>
-          </Text>
-          <Form onSubmit={handleSubmit} className="max-w-xl mt-4">
-            <Field name="name" className="mt-2">
-              <Label>
-                Token name
-              </Label>
-              <TextField.Root placeholder="e.g: Solana" name="name" onChange={handleTextInputChange} size="3"
-                              value={formData.name}/>
-            </Field>
-            <Field name="symbol" className="mt-2">
-              <Label>
-                Token symbol
-              </Label>
-              <TextField.Root placeholder="e.g: SOL" name="symbol" onChange={handleTextInputChange}
-                              value={formData.symbol} size="3"/>
-            </Field>
-            <Field name="symbol" className="mt-2">
-              <Label>
-                Token decimals
-              </Label>
-              <TextField.Root placeholder="e.g: SOL" type="number" name="e.g: 9" onChange={handleTextInputChange}
-                              value={formData.decimals} size="3"/>
-            </Field>
-            <Field name="symbol" className="mt-2">
-              <Label>
-                Token total supply
-              </Label>
-              <TextField.Root placeholder="e.g: 100,000,000" type="number" name="e.g: 9"
-                              onChange={handleTextInputChange}
-                              value={formData.total_supply} size="3"/>
-            </Field>
-            <Field name="description" className="mt-2">
-              <Label>
-                Token description
-              </Label>
-              <TextArea
-                  placeholder="e.g: This is a utility token used within [place], you will receive this token once you do X."
-                  name="description" onChange={handleTextInputChange} value={formData.description} size="3"/>
-            </Field>
-            <Field name="token mint account">
-              <p className="mb-2 mt-2">
-                Token mint authority
+      <RpcContextProvider>
+        <Main>
+          <Container className="justify-center">
+            <Heading className="mt-5" size="8">Create token</Heading>
+            <Text>
+              <p className="max-w-xl">
+                This is a simple solution for creating a new token and its metadata. Fill in the required fields and
+                press
+                submit.
               </p>
-              <Button variant="solid" size="4">Connect wallet</Button>
-            </Field>
-            <Field name="token mint account">
-              <Flex align="center" gapX="2">
-                <Switch className="cursor-pointer" onCheckedChange={setHasTokenFreeze} checked={hasTokenFreeze}
-                />
+            </Text>
+            <Form onSubmit={handleSubmit} className="max-w-xl mt-4">
+              <Field name="name" className="mt-2">
+                <Label>
+                  Token name
+                </Label>
+                <TextField.Root placeholder="e.g: Solana" name="name" onChange={handleTextInputChange} size="3"
+                                value={formData.name}/>
+              </Field>
+              <Field name="symbol" className="mt-2">
+                <Label>
+                  Token symbol
+                </Label>
+                <TextField.Root placeholder="e.g: SOL" name="symbol" onChange={handleTextInputChange}
+                                value={formData.symbol} size="3"/>
+              </Field>
+              <Field name="symbol" className="mt-2">
+                <Label>
+                  Token decimals
+                </Label>
+                <TextField.Root placeholder="e.g: SOL" type="number" name="e.g: 9" onChange={handleTextInputChange}
+                                value={formData.decimals} size="3"/>
+              </Field>
+              <Field name="symbol" className="mt-2">
+                <Label>
+                  Token total supply
+                </Label>
+                <TextField.Root placeholder="e.g: 100,000,000" type="number" name="e.g: 9"
+                                onChange={handleTextInputChange}
+                                value={formData.total_supply} size="3"/>
+              </Field>
+              <Field name="description" className="mt-2">
+                <Label>
+                  Token description
+                </Label>
+                <TextArea
+                    placeholder="e.g: This is a utility token used within [place], you will receive this token once you do X."
+                    name="description" onChange={handleTextInputChange} value={formData.description} size="3"/>
+              </Field>
+              <Field name="token mint account">
                 <p className="mb-2 mt-2">
-                  Token freeze authority (optional)
+                  Token mint authority
                 </p>
-              </Flex>
-              <Button variant="solid" size="4" disabled={!hasTokenFreeze}>Connect wallet</Button>
-            </Field>
-            <Field name="token mint account">
-              <Flex align="baseline" gapX="2">
-                <Switch className="cursor-pointer mt-2" onCheckedChange={setRevokeMintAuthority}
-                        checked={revokeMintAuthority}
-                />
-                <div>
-                  <p className="mb-2 mt-2">
-                    Revoke mint authority
-                  </p>
-                  <p>
-                    <strong>Note: </strong>
-                    If you enable "revoke mint authority" it will disable your authority to ever mint new tokens, which
-                    means the supply will never
-                    change.
-                  </p>
-                </div>
-              </Flex>
-            </Field>
-            <Field name="image" className="mt-2">
-              <Label>
-                Token image
-              </Label>
-              <TokenImage ref={tokenImageRef} error={formErrors.image}/>
-            </Field>
-            <Button className="w-full mt-4" size="4" type="submit">Submit</Button>
-          </Form>
-        </Container>
-      </Main>
+                <WalletProvider wallets={[]} autoConnect={true}>
+                  <SelectWalletButton/>
+                </WalletProvider>
+              </Field>
+              <Field name="token mint account" className="mt-4">
+                <Flex align="baseline" gapX="2">
+                  <Switch className="cursor-pointer" onCheckedChange={setHasTokenFreeze} checked={hasTokenFreeze}
+                  />
+                  <div>
+                    <p>Token freeze authority (optional)</p>
+                    <p className="mb-2 mt-2">
+                      <strong>Note: </strong>
+                      If the token freeze authority, you can use this token to provide liquidity.
+                    </p>
+                  </div>
+                </Flex>
+              </Field>
+              <Field name="token mint account">
+                <Flex align="baseline" gapX="2">
+                  <Switch className="cursor-pointer mt-2" onCheckedChange={setRevokeMintAuthority}
+                          checked={revokeMintAuthority}
+                  />
+                  <div>
+                    <p className="mb-2 mt-2">
+                      Revoke mint authority
+                    </p>
+                    <p>
+                      <strong>Note: </strong>
+                      If you enable "revoke mint authority" it will disable your authority to ever mint new tokens,
+                      which
+                      means the supply will never
+                      change.
+                    </p>
+                  </div>
+                </Flex>
+              </Field>
+              <Field name="image" className="mt-2">
+                <Label>
+                  Token image
+                </Label>
+                <TokenImage ref={tokenImageRef} error={formErrors.image}/>
+              </Field>
+              <Button className="w-full mt-4" size="4" type="submit">Submit</Button>
+            </Form>
+          </Container>
+        </Main>
+      </RpcContextProvider>
+
   );
 }

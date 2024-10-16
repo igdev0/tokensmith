@@ -1,12 +1,4 @@
 @tailwind utilities;
-.main {
-  overflow: hidden;
-  position: relative;
-
-  .bg {
-    z-index: -3;
-  }
-}
 
 .circle {
   width: 80rem;
