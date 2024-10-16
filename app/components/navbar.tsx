@@ -1,6 +1,5 @@
 import {Heading, IconButton, useThemeContext} from '@radix-ui/themes';
 import {GitHubLogoIcon, MoonIcon, SunIcon} from '@radix-ui/react-icons';
-import {WalletProvider} from '@solana/wallet-adapter-react';
 import SelectWalletButton from '@/app/components/select-wallet-button';
 
 const ICON_SIZE = 24;
@@ -21,9 +20,7 @@ export default function Navbar() {
             {theme.appearance === "light" ? <MoonIcon width={ICON_SIZE} height={ICON_SIZE}/> :
                 <SunIcon width={ICON_SIZE} height={ICON_SIZE}/>}
           </IconButton>
-          <WalletProvider wallets={[]} autoConnect={true}>
-            <SelectWalletButton/>
-          </WalletProvider>
+          <SelectWalletButton/>
         </div>
       </nav>
   );
