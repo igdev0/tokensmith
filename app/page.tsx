@@ -1,64 +1,38 @@
 "use client";
-import { useState } from 'react';
+import "./page.scss";
+import {FormEvent, PropsWithChildren} from 'react';
+import {Button} from '@radix-ui/themes';
 
-function UploadForm() {
-  const [file, setFile] = useState(null);
-  const [ipfsHash, setIpfsHash] = useState('');
-
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res = await fetch('/api/create-token', {
-        method: "POST",
-        body: formData
-        // method: 'POST',
-        // body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setIpfsHash(data.ipfsHash);
-      } else {
-        console.error('File upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
-  };
-
+function Main(props: PropsWithChildren) {
   return (
-      <div>
-        <form onSubmit={handleSubmit}>
-          <input type="file" onChange={handleFileChange} />
-          <button type="submit">Upload File</button>
-        </form>
-
-        {ipfsHash && (
-            <div>
-              <p>File uploaded to IPFS!</p>
-              <p>IPFS Hash: {ipfsHash}</p>
-              <a href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`} target="_blank">
-                View File
-              </a>
-            </div>
-        )}
-      </div>
+      <main className="main min-h-screen w-full">
+        <main className="fixed h-full w-full">
+          <div className="fixed h-full pointer-events-none w-full bg"/>
+          <div className="circle circle--xl circle--blue circle--left"/>
+          <div className="circle circle--xl circle--green circle--right"/>
+          <div className="circle circle--xl circle--purple circle--bottom-center"/>
+        </main>
+        <div className="z-10 relative h-full">
+          {props.children}
+        </div>
+      </main>
   );
 }
+
 export default function Home() {
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+  };
+
+  const handleFileChange = () => {
+
+  };
   return (
-    <div>
-      <UploadForm/>
-    </div>
+      <Main>
+        <form onSubmit={handleSubmit}>
+          <input type="file" onChange={handleFileChange}/>
+          <Button type="submit">Create token</Button>
+        </form>
+      </Main>
   );
 }

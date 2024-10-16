@@ -1,0 +1,56 @@
+@tailwind utilities;
+.main {
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+
+  .bg {
+    z-index: -3;
+  }
+}
+
+.circle {
+  width: 80rem;
+  height: 80rem;
+  border-radius: 50%;
+  position: fixed;
+  z-index: -2;
+
+  &--left {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0 auto;
+    transform: translateX(-50%);
+  }
+
+  &--right {
+    top: 0;
+    left: auto;
+    right: 0;
+    bottom: 0;
+  }
+
+  &--bottom-center {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0 auto;
+    transform: translateY(50%);
+  }
+
+
+  &--purple {
+    background: radial-gradient(var(--purple-9), transparent 70%);
+  }
+
+  &--blue {
+    background: radial-gradient(var(--blue-9), transparent 70%);
+  }
+
+  &--green {
+    background: radial-gradient(var(--green-9), transparent 70%);
+  }
+}
