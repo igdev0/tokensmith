@@ -106,10 +106,7 @@ export default function CreateToken() {
     }
     const feePayer = wallet.publicKey;
     const image = tokenImageRef.current?.getImage();
-    const msg = Buffer.from("Hello world");
-    if (wallet.signMessage) {
-
-    }
+    
     // rpcConfig.connection.
     try {
       const valid = validator.validate(createTokenJSONSchema, formData);
