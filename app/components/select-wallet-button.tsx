@@ -36,7 +36,7 @@ export default forwardRef(function SelectWalletButton(props: ButtonProps, ref) {
                 <div className="cursor-pointer" onClick={wallet.disconnect}><CloseIcon/></div>
               </Button>
           ) : (
-              <Dialog.Trigger>
+              <Dialog.Trigger asChild>
                 <Button size="4" variant="solid">Connect wallet</Button>
               </Dialog.Trigger>
           )
