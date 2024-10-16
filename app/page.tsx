@@ -7,6 +7,8 @@ import RpcContextProvider from '@/app/context/config';
 import SelectWalletButton from '@/app/components/select-wallet-button';
 import {WalletProvider} from '@solana/wallet-adapter-react';
 import Navbar from '@/app/components/navbar';
+import createTokenJSONSchema from './create-token-jsonschema.json';
+import Ajv from 'ajv';
 
 function Main(props: PropsWithChildren) {
   return (
@@ -105,6 +107,7 @@ function removeRef(data: object) {
   return JSON.parse(JSON.stringify(data));
 }
 
+const validator = new Ajv().addSchema(createTokenJSONSchema);
 export default function Home() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
@@ -114,6 +117,12 @@ export default function Home() {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const image = tokenImageRef.current?.getImage();
+    try {
+      const valid = validator.validate(createTokenJSONSchema, formData);
+
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const handleTextInputChange = (formEvent: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
