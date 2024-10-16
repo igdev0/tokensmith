@@ -5,7 +5,7 @@ import {NextRequest, NextResponse} from 'next/server';
 
 import * as fs from 'fs';
 import {TokenMetadata} from '@solana/spl-token-metadata';
-import {PublicKey} from '@solana/web3.js';
+import {Cluster, clusterApiUrl, Connection, PublicKey} from '@solana/web3.js';
 import {randomUUID} from 'crypto';
 
 const sdk = new PinataClient({
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
   const symbol = formData?.get("symbol") as string | undefined;
   const mint = formData?.get("symbol") as string | undefined;
   const upgradeAuthority = formData?.get("upgradeAuthority") as string | undefined;
+  const network = formData?.get("network") as Cluster | undefined;
 
   // Get the file from the form data
   const file = formData.get("file") as File | undefined;
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({message: "No file received"}, {status: 400});
   }
 
-  if (!name || !symbol || !mint || !description) {
+  if (!name || !symbol || !mint || !description || !network) {
     return NextResponse.json({message: "Invalid input",}, {status: 400});
   }
 
@@ -90,6 +91,9 @@ export async function POST(req: NextRequest) {
     mint: new PublicKey(mint),
     uri
   };
+
+  const connection = new Connection(clusterApiUrl(network));
+  const recentBlockhash = await connection.getLatestBlockhash();
 
   if (upgradeAuthority) {
     tokenMetadata.updateAuthority = new PublicKey(upgradeAuthority);
