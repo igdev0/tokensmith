@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/token.schema.json",
+  "title": "Token Metadata Schema",
+  "description": "Schema for validating token metadata",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the token"
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10,
+      "description": "Symbol representing the token"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the token"
+    },
+    "image": {
+      "type": "string",
+      "description": "URL of the token's image"
+    },
+    "decimals": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of decimal places for the token"
+    },
+    "total_supply": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total supply of the token"
+    },
+    "mint_authority": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Account or authority responsible for minting the token"
+    },
+    "mint_freeze_authority": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Account or authority responsible for freezing the token"
+    }
+  },
+  "required": [
+    "name",
+    "symbol",
+    "decimals",
+    "total_supply",
+    "mint_authority"
+  ],
+  "additionalProperties": false
+}
