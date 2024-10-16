@@ -107,7 +107,7 @@ function removeRef(data: object) {
   return JSON.parse(JSON.stringify(data));
 }
 
-const validator = new Ajv().addSchema(createTokenJSONSchema);
+const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
 export default function Home() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
@@ -119,7 +119,6 @@ export default function Home() {
     const image = tokenImageRef.current?.getImage();
     try {
       const valid = validator.validate(createTokenJSONSchema, formData);
-
     } catch (err) {
       console.log(err);
     }
