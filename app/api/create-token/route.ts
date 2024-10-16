@@ -1,12 +1,17 @@
-import PinataClient, {PinataPinResponse} from '@pinata/sdk';
+import PinataClient from '@pinata/sdk';
 import path from 'path';
 import {writeFile} from 'fs/promises';
-import {NextApiResponse} from 'next';
 import {NextRequest, NextResponse} from 'next/server';
 
 import * as fs from 'fs';
+import {TokenMetadata} from '@solana/spl-token-metadata';
+import {PublicKey} from '@solana/web3.js';
+import {randomUUID} from 'crypto';
 
-const sdk = new PinataClient({pinataApiKey: process.env.PINATA_API_KEY, pinataSecretApiKey: process.env.PINATA_API_SECRET});
+const sdk = new PinataClient({
+  pinataApiKey: process.env.PINATA_API_KEY,
+  pinataSecretApiKey: process.env.PINATA_API_SECRET
+});
 const FILE_UPLOAD_BASE_URL = "https://gateway.pinata.cloud/ipfs/";
 export const config = {
   api: {
@@ -14,62 +19,81 @@ export const config = {
   }
 };
 
-interface TokenMetadata {
-  icon: string | null,
-  name: string,
+export interface MetaAttributes {
+  trait_type: string;
+  value: string;
 }
+
+export interface Meta {
+  name: string;
+  symbol: string;
+  description: string;
+  image: string;
+  attributes: MetaAttributes[];
+}
+
 async function processFileUploadToIPFS(binaries: ArrayBuffer, file_name: string): Promise<string> {
   // Convert the file data to a Buffer
-    const buffer = Buffer.from(await binaries);
-    const filename = file_name.replaceAll(" ", "_");
+  const buffer = Buffer.from(await binaries);
+  const filename = file_name.replaceAll(" ", "_");
+  // Write the file to the specified directory (public/assets) with the modified filename
+  const filepath = path.join(process.cwd(), "/static/" + filename);
+  await writeFile(
+      filepath,
+      buffer
+  );
 
-    try {
-      // Write the file to the specified directory (public/assets) with the modified filename
-      const filepath = path.join(process.cwd(), "/static/" + filename);
-      await writeFile(
-          filepath,
-          buffer
-      );
-
-      const fileStream = fs.createReadStream(filepath);
-      // Upload the file to Pinata
-      const {IpfsHash} = await sdk.pinFileToIPFS(fileStream, {pinataMetadata: {name: filename}});
-      return `${FILE_UPLOAD_BASE_URL}${IpfsHash}`
-    } catch (err) {
-      throw err;
-    }
+  const fileStream = fs.createReadStream(filepath);
+  // Upload the file to Pinata
+  const {IpfsHash} = await sdk.pinFileToIPFS(fileStream, {pinataMetadata: {name: filename}});
+  return `${FILE_UPLOAD_BASE_URL}${IpfsHash}`;
 }
 
-export async function POST(req: NextRequest, res: NextApiResponse) {
+export async function POST(req: NextRequest) {
   // Parse the incoming form data
   const formData = await req.formData();
-  const token_name = formData?.get("token_name") as string | undefined;
+  const name = formData?.get("name") as string | undefined;
+  const description = formData?.get("name") as string | undefined;
+  const symbol = formData?.get("symbol") as string | undefined;
+  const mint = formData?.get("symbol") as string | undefined;
+  const upgradeAuthority = formData?.get("upgradeAuthority") as string | undefined;
 
-  if(!token_name) {
-    return NextResponse.json({message: "Invalid input, token_name is required", }, {status: 400});
-  }
-
-
-  const tokenMetadata: TokenMetadata = {
-    name: formData?.get("token_name") as string,
-    icon: null,
-  }
   // Get the file from the form data
-  const file = formData.get("file");
+  const file = formData.get("file") as File | undefined;
   // Check if a file is received
   if (!file) {
     // If no file is received, return a JSON response with an error and a 400 status code
-    return res.json({ error: "No files received."});
+    return NextResponse.json({message: "No file received"}, {status: 400});
   }
-  if ("arrayBuffer" in file) {
-    try {
-      const icon_uri = await processFileUploadToIPFS(await file.arrayBuffer(), file.name);
-      tokenMetadata.icon = icon_uri;
 
-    } catch (err) {
-        return NextResponse.json({message: "Failed while trying to process file upload", details: err.message}, {status: 500})
-    }
-
+  if (!name || !symbol || !mint || !description) {
+    return NextResponse.json({message: "Invalid input",}, {status: 400});
   }
-    return NextResponse.json({message: "Success"});
+
+  const image_url = await processFileUploadToIPFS(await file.arrayBuffer(), file.name);
+
+  const metadata: Meta = {
+    description,
+    name,
+    image: image_url,
+    symbol,
+    attributes: [],
+  };
+
+  const make_buffer = Buffer.from(metadata.toString());
+  const uri = await processFileUploadToIPFS(make_buffer.buffer, randomUUID());
+
+  const tokenMetadata: TokenMetadata = {
+    name,
+    symbol,
+    additionalMetadata: [],
+    mint: new PublicKey(mint),
+    uri
+  };
+
+  if (upgradeAuthority) {
+    tokenMetadata.updateAuthority = new PublicKey(upgradeAuthority);
+  }
+
+  return NextResponse.json({message: "Success"});
 }
