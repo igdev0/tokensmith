@@ -6,11 +6,24 @@ import SelectWalletButton from '@/app/components/select-wallet-button';
 import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useRef, useState} from 'react';
 import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
+import {
+  createAssociatedTokenAccountInstruction,
+  createInitializeMintInstruction,
+  createMintToInstruction,
+  getAssociatedTokenAddress,
+  getMinimumBalanceForRentExemptMint,
+  MINT_SIZE,
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import {createInitializeInstruction} from "@solana/spl-token-metadata";
 import {RpcConfigContext} from '@/app/context/config';
+import {Connection, Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
 
 interface TokenImageProps {
   error: string | null,
 }
+
 
 function TokenImageComponent(props: TokenImageProps, ref: Ref<{ getImage: () => File }>,) {
   const [file, setFile] = useState<File>(null);
@@ -90,29 +103,110 @@ function removeRef(data: object) {
 }
 
 const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
+const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+
+function useCreateTokenTransaction() {
+  return async (connection: Connection, mint: Keypair, decimals: number, totalSupply: number, payer: PublicKey, hasTokenFreeze = false) => {
+    const recentBlockhash = await connection.getLatestBlockhash();
+    const freezeAuthority = hasTokenFreeze ? payer : null;
+    const transaction = new Transaction({recentBlockhash: recentBlockhash.blockhash, feePayer: payer});
+
+
+    const createMintInstruction = createInitializeMintInstruction(
+        mint.publicKey,  // The mint public key
+        decimals,               // Decimals (e.g., 6 for fungible tokens)
+        payer, // Mint authority
+        freezeAuthority,            // Freeze authority (optional, can be null)
+        TOKEN_PROGRAM_ID
+    );  // Step 3: Create associated token
+
+    const associatedTokenAccount = await getAssociatedTokenAddress(
+        mint.publicKey,  // Mint of the token
+        payer  // Owner of the associated token account
+    );
+    const createTokenAccountInstruction = createAssociatedTokenAccountInstruction(
+        payer,
+        associatedTokenAccount,
+        payer,
+        mint.publicKey,
+    );
+    // const totalSupplyTransaction = create
+    const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, totalSupply);
+
+    const accountCreationInstruction = SystemProgram.createAccount({
+      fromPubkey: payer,
+      lamports: await getMinimumBalanceForRentExemptMint(connection),
+      space: MINT_SIZE,
+      newAccountPubkey: mint.publicKey,
+      programId: TOKEN_PROGRAM_ID,
+    });
+
+
+    transaction.add(accountCreationInstruction, createMintInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
+
+    return transaction;
+  };
+}
+
 export default function CreateToken() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
   const [hasTokenFreeze, setHasTokenFreeze] = useState<boolean>(false);
   const [revokeMintAuthority, setRevokeMintAuthority] = useState<boolean>(false);
-  const rpcConfig = useContext(RpcConfigContext);
+  const {connection} = useContext(RpcConfigContext);
   const wallet = useWallet();
   const [formErrors, setFormErrors] = useState<FormFieldsError>(removeRef(INITIAL_ERRORS));
+  const createSplTokenTransaction = useCreateTokenTransaction();
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const recentBlockhash = await rpcConfig.connection.getLatestBlockhash();
-    if (!wallet.publicKey) {
+    if (!wallet.publicKey || !wallet?.signTransaction) {
       return;
     }
-    const feePayer = wallet.publicKey;
     const image = tokenImageRef.current?.getImage();
-    
-    // rpcConfig.connection.
-    try {
-      const valid = validator.validate(createTokenJSONSchema, formData);
-    } catch (err) {
-      console.log(err);
+    const mint = Keypair.generate();
+    const createdTokenTransaction = await createSplTokenTransaction(connection, mint, formData.decimals, formData.total_supply, wallet.publicKey, hasTokenFreeze);
+
+
+    const body = new FormData();
+    body.set("file", image);
+    body.set("name", formData.name);
+    body.set("description", formData.description);
+    body.set("symbol", formData.symbol);
+
+    // const res = await fetch("/api/upload-metadata", {
+    //   method: "POST",
+    //   body: body as keyof object
+    // });
+
+    // const responseJsonData: { message: string, uri: string } = await res.json();
+    const [metadataAccount] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          // TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+          mint.publicKey.toBuffer(),
+        ],
+        TOKEN_METADATA_PROGRAM_ID
+    );
+    const metadataInitInstruction = createInitializeInstruction({
+      name: formData.name,
+      symbol: formData.symbol,
+      mint: mint.publicKey,
+      programId: TOKEN_2022_PROGRAM_ID,
+      uri: "https://someuri.com",
+      updateAuthority: wallet.publicKey,
+      metadata: metadataAccount,
+      mintAuthority: wallet.publicKey,
+    });
+    createdTokenTransaction.add(metadataInitInstruction);
+
+    if (wallet.signTransaction) {
+      const signedTx = await wallet.signTransaction(createdTokenTransaction);
+      signedTx.partialSign(mint);
+      const serialisedTx = signedTx.serialize();
+      const txHash = await connection.sendRawTransaction(serialisedTx);
+      return {txHash, mint};
     }
+
   };
 
   const handleTextInputChange = (formEvent: FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -153,14 +247,14 @@ export default function CreateToken() {
             <Label>
               Token decimals
             </Label>
-            <TextField.Root placeholder="e.g: SOL" type="number" name="e.g: 9" onChange={handleTextInputChange}
+            <TextField.Root placeholder="e.g: 9" type="number" name="decimals" onChange={handleTextInputChange}
                             value={formData.decimals} size="3"/>
           </Field>
           <Field name="symbol" className="mt-2">
             <Label>
               Token total supply
             </Label>
-            <TextField.Root placeholder="e.g: 100,000,000" type="number" name="e.g: 9"
+            <TextField.Root placeholder="e.g: 100,000,000" type="number" name="total_supply"
                             onChange={handleTextInputChange}
                             value={formData.total_supply} size="3"/>
           </Field>
