@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData();
 
   const name = formData?.get("name") as string | undefined;
-  const description = formData?.get("name") as string | undefined;
+  const description = formData?.get("description") as string | undefined;
   const symbol = formData?.get("symbol") as string | undefined;
 
   // Get the file from the form data
@@ -66,7 +66,6 @@ export async function POST(req: NextRequest) {
   }
 
   const image_url = await processFileUploadToIPFS(await file.arrayBuffer(), file.name);
-
   const metadata: Meta = {
     description,
     name,
@@ -74,6 +73,8 @@ export async function POST(req: NextRequest) {
     symbol,
     attributes: [],
   };
+
+
   const uri = await sdk.pinJSONToIPFS(metadata);
 
   return NextResponse.json({message: "Success", uri: `${FILE_UPLOAD_BASE_URL}${uri.IpfsHash}`});
