@@ -1,6 +1,7 @@
 import {Heading, IconButton, useThemeContext} from '@radix-ui/themes';
 import {GitHubLogoIcon, MoonIcon, SunIcon} from '@radix-ui/react-icons';
 import SelectWalletButton from '@/app/components/select-wallet-button';
+import Link from 'next/link';
 
 const ICON_SIZE = 24;
 export default function Navbar() {
@@ -13,8 +14,12 @@ export default function Navbar() {
            style={{boxSizing: "content-box"}}>
         <Heading size="4">IGDev tools 🛠️</Heading>
         <div className="flex justify-center items-center gap-4">
-          <IconButton variant="ghost" size="3" color="gray">
-            <GitHubLogoIcon width={ICON_SIZE} height={ICON_SIZE}/>
+          <IconButton asChild={true} variant="ghost" size="4" color="gray">
+            <Link
+                target="_blank" rel="_noopener"
+                href="https://github.com/igdev0/solana-token-creator">
+              <GitHubLogoIcon width={ICON_SIZE} height={ICON_SIZE}/>
+            </Link>
           </IconButton>
           <IconButton variant="ghost" onClick={toggleAppereance} size="4" color="gray">
             {theme.appearance === "light" ? <MoonIcon width={ICON_SIZE} height={ICON_SIZE}/> :
