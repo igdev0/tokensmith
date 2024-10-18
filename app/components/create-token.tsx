@@ -23,6 +23,7 @@ import {
 import {createInitializeInstruction, pack, TokenMetadata} from "@solana/spl-token-metadata";
 import {RpcConfigContext} from '@/app/context/config';
 import {Connection, Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
+import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
 
 
 function TokenImageComponent(props, ref: Ref<{ getImage: () => File }>,) {
@@ -64,10 +65,8 @@ const INITIAL_DATA = {
   description: "",
   image: "",
   metadata_uri: "",
-  decimals: 0,
-  total_supply: 0,
-  mint_authority: "",
-  mint_freeze_authority: "",
+  decimals: "0",
+  total_supply: "0",
   revoke_authority: false,
 };
 
@@ -77,8 +76,6 @@ const INITIAL_ERRORS = {
   symbol: null,
   description: null,
   image: null,
-  mint_authority: null,
-  mint_freeze_authority: null,
 };
 
 type FieldError = string | null;
@@ -89,8 +86,6 @@ type FormFieldsError = {
   description: FieldError,
   metadata_uri: FieldError,
   image: FieldError,
-  mint_authority: FieldError,
-  mint_freeze_authority: FieldError,
 }
 
 function removeRef(data: object) {
@@ -184,10 +179,10 @@ function FieldErrorMessage({name, formErrors}: { name: string, formErrors: FormF
   );
 }
 
-const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
-
 export default function CreateToken() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
+  const formFeedback = useRef<FormFeedbackRef>();
+  const rpcConfig = useContext(RpcConfigContext);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
   const [hasTokenFreeze, setHasTokenFreeze] = useState<boolean>(false);
   const {connection} = useContext(RpcConfigContext);
@@ -197,9 +192,11 @@ export default function CreateToken() {
   const [isLoading, setIsLoading] = useState(false);
 
   const isFormDisabled = useMemo(() => {
-    return Object.values(formErrors).some(v => v !== null) || !wallet.publicKey;
-  }, [formErrors, wallet]);
+    return !wallet.publicKey || isLoading;
+  }, [isLoading, wallet]);
+
   const handleSubmit = async (event: FormEvent) => {
+    const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
     event.preventDefault();
     if (!wallet.publicKey || !wallet?.signTransaction) {
       return;
@@ -208,11 +205,17 @@ export default function CreateToken() {
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
     const body = new FormData();
-    validator.validate(createTokenJSONSchema, formData);
-    const currentErrors = removeRef(formErrors);
-    for (const error of validator.errors) {
-      const name = error.instancePath.split("/").pop();
-      currentErrors[name] = error.message;
+    validator.validate(createTokenJSONSchema, {
+      ...formData,
+      decimals: parseInt(formData.decimals),
+      total_supply: parseInt(formData.total_supply)
+    });
+    const currentErrors = removeRef(INITIAL_ERRORS);
+    if (validator.errors) {
+      for (const error of validator.errors) {
+        const name = error.instancePath.split("/").pop();
+        currentErrors[name] = error.message;
+      }
     }
     if (!image) {
       currentErrors.image = "This field is required";
@@ -247,14 +250,27 @@ export default function CreateToken() {
         signedTx.partialSign(mint);
         const serialisedTx = signedTx.serialize();
         const txHash = await connection.sendRawTransaction(serialisedTx);
-        console.log({txHash, mint});
+        formFeedback.current?.pushMessage({
+          title: "Token created 🚀",
+          duration: 10000,
+          variant: "success",
+          description: `
+            <p>Congrats 🎉. your token was created, is a matter of time before the token will show up in your wallet, check <a class="text-purple-800 underline" href="https://explorer.solana.com/tx/account/${txHash}?cluster=${rpcConfig.chain}" target="_blank">this link for more details.</a> </p>
+          `
+        });
+        setFormData(removeRef(INITIAL_DATA));
         // @todo: handle success
       } catch (err) {
         // Possible failure:
         // - Not enough balance
         // - Operation was canceled
         // - aditionalMetadata[] is passed to the transaction and then it fails "not enough balance"
-        console.error(err);
+        formFeedback.current?.pushMessage({
+          title: "Operation failed",
+          description: `The operation failed with message ${err.message()}`,
+          variant: "error",
+          duration: 3000,
+        });
         // @todo: handle error
       }
     }
@@ -377,7 +393,7 @@ export default function CreateToken() {
                   loading={isLoading}
                   className="w-full mt-4" size="4" type="submit">Submit</Button>
         </Form>
-
+        <FormFeedback ref={formFeedback}/>
       </Container>
   );
 }
