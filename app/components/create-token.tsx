@@ -11,6 +11,7 @@ import {
   createInitializeMetadataPointerInstruction,
   createInitializeMintInstruction,
   createMintToInstruction,
+  createRevokeInstruction,
   ExtensionType,
   getAssociatedTokenAddress,
   getMintLen,
@@ -79,6 +80,7 @@ const INITIAL_DATA = {
   total_supply: 0,
   mint_authority: "",
   mint_freeze_authority: "",
+  revoke_authority: false,
 };
 
 
@@ -161,7 +163,7 @@ function useCreateTokenTransaction() {
 
     const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, formData.total_supply, [], TOKEN_2022_PROGRAM_ID);
 
-    const metadataInitInstruction = createInitializeInstruction({
+    const metadataInstruction = createInitializeInstruction({
       name: formData.name,
       symbol: formData.symbol,
       mint: mint.publicKey,
@@ -172,7 +174,12 @@ function useCreateTokenTransaction() {
       mintAuthority: payer,
     });
 
-    transaction.add(accountCreationInstruction, metadataPointerInstruction, createMintInstruction, metadataInitInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
+    transaction.add(accountCreationInstruction, metadataPointerInstruction, createMintInstruction, metadataInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
+
+    if (formData.revoke_authority) {
+      const revokeAuthorityInstruction = createRevokeInstruction(payer, payer);
+      transaction.add(revokeAuthorityInstruction);
+    }
 
     return transaction;
   };
@@ -200,6 +207,7 @@ export default function CreateToken() {
     body.set("name", formData.name);
     body.set("description", formData.description);
     body.set("symbol", formData.symbol);
+
     const response = await fetch("/api/upload-metadata", {
       method: "POST",
       body: body as FormData
@@ -300,8 +308,9 @@ export default function CreateToken() {
           </Field>
           <Field name="token mint account">
             <Flex align="baseline" gapX="2">
-              <Switch className="cursor-pointer mt-2" onCheckedChange={setRevokeMintAuthority}
-                      checked={revokeMintAuthority}
+              <Switch className="cursor-pointer mt-2"
+                      onCheckedChange={v => setFormData(prev => ({...prev, revoke_authority: v}))}
+                      checked={formData.revoke_authority}
               />
               <div>
                 <p className="mb-2 mt-2">
@@ -325,6 +334,7 @@ export default function CreateToken() {
           </Field>
           <Button disabled={!wallet?.connected} className="w-full mt-4" size="4" type="submit">Submit</Button>
         </Form>
+
       </Container>
   );
 }
