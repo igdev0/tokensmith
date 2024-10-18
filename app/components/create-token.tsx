@@ -3,7 +3,7 @@ import {Button, Container, Flex, Heading, Switch, Text, TextArea, TextField} fro
 import {Field, Form, Label} from '@radix-ui/react-form';
 import {useWallet, WalletProvider} from '@solana/wallet-adapter-react';
 import SelectWalletButton from '@/app/components/select-wallet-button';
-import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useRef, useState} from 'react';
+import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
 import {
@@ -24,12 +24,8 @@ import {createInitializeInstruction, pack, TokenMetadata} from "@solana/spl-toke
 import {RpcConfigContext} from '@/app/context/config';
 import {Connection, Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
 
-interface TokenImageProps {
-  error: string | null,
-}
 
-
-function TokenImageComponent(props: TokenImageProps, ref: Ref<{ getImage: () => File }>,) {
+function TokenImageComponent(props, ref: Ref<{ getImage: () => File }>,) {
   const [file, setFile] = useState<File>(null);
   const [preview, setPreview] = useState<string>();
   const handleFileChange = (event: FormEvent<HTMLInputElement>) => {
@@ -56,15 +52,6 @@ function TokenImageComponent(props: TokenImageProps, ref: Ref<{ getImage: () => 
           {file ? <img className="aspect-square w-10" src={preview}/> : null}
           {file?.name ?? "No image uploaded"}
         </div>
-        {
-            props.error && (
-                <Text mt="2">
-                  <p className="dark:text-red-500">
-                    {props.error}
-                  </p>
-                </Text>
-            )
-        }
       </>
   );
 }
@@ -110,7 +97,6 @@ function removeRef(data: object) {
   return JSON.parse(JSON.stringify(data));
 }
 
-const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
 
 function useCreateTokenTransaction() {
   return async (connection: Connection, mint: Keypair, formData: typeof INITIAL_DATA, payer: PublicKey, hasTokenFreeze = false) => {
@@ -186,23 +172,60 @@ function useCreateTokenTransaction() {
   };
 }
 
+function FieldErrorMessage({name, formErrors}: { name: string, formErrors: FormFieldsError }) {
+
+  if (!formErrors[name]) {
+    return null;
+  }
+  return (
+      <p className="text-red-500">
+        {formErrors[name]}
+      </p>
+  );
+}
+
+const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
+
 export default function CreateToken() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
   const [hasTokenFreeze, setHasTokenFreeze] = useState<boolean>(false);
-  const [revokeMintAuthority, setRevokeMintAuthority] = useState<boolean>(false);
   const {connection} = useContext(RpcConfigContext);
   const wallet = useWallet();
   const [formErrors, setFormErrors] = useState<FormFieldsError>(removeRef(INITIAL_ERRORS));
   const createSplTokenTransaction = useCreateTokenTransaction();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const isFormDisabled = useMemo(() => {
+    return Object.values(formErrors).some(v => v !== null) || !wallet.publicKey;
+  }, [formErrors, wallet]);
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!wallet.publicKey || !wallet?.signTransaction) {
       return;
     }
+
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
     const body = new FormData();
+    validator.validate(createTokenJSONSchema, formData);
+    const currentErrors = removeRef(formErrors);
+    for (const error of validator.errors) {
+      const name = error.instancePath.split("/").pop();
+      currentErrors[name] = error.message;
+    }
+    if (!image) {
+      currentErrors.image = "This field is required";
+    }
+
+    setFormErrors(currentErrors);
+
+    if (Object.values(currentErrors).some(v => v !== null)) {
+      return;
+    }
+    setFormErrors(removeRef(INITIAL_ERRORS));
+    setIsLoading(true);
+
     body.set("file", image);
     body.set("name", formData.name);
     body.set("description", formData.description);
@@ -219,12 +242,23 @@ export default function CreateToken() {
     const createdTokenTransaction = await createSplTokenTransaction(connection, mint, formData, wallet.publicKey, hasTokenFreeze);
 
     if (wallet.signTransaction) {
-      const signedTx = await wallet.signTransaction(createdTokenTransaction);
-      signedTx.partialSign(mint);
-      const serialisedTx = signedTx.serialize();
-      const txHash = await connection.sendRawTransaction(serialisedTx);
-      return {txHash, mint};
+      try {
+        const signedTx = await wallet.signTransaction(createdTokenTransaction);
+        signedTx.partialSign(mint);
+        const serialisedTx = signedTx.serialize();
+        const txHash = await connection.sendRawTransaction(serialisedTx);
+        console.log({txHash, mint});
+        // @todo: handle success
+      } catch (err) {
+        // Possible failure:
+        // - Not enough balance
+        // - Operation was canceled
+        // - aditionalMetadata[] is passed to the transaction and then it fails "not enough balance"
+        console.error(err);
+        // @todo: handle error
+      }
     }
+    setIsLoading(false);
 
   };
 
@@ -254,6 +288,7 @@ export default function CreateToken() {
             </Label>
             <TextField.Root placeholder="e.g: Solana" name="name" onChange={handleTextInputChange} size="3"
                             value={formData.name}/>
+            <FieldErrorMessage formErrors={formErrors} name="name"/>
           </Field>
           <Field name="symbol" className="mt-2">
             <Label>
@@ -261,6 +296,7 @@ export default function CreateToken() {
             </Label>
             <TextField.Root placeholder="e.g: SOL" name="symbol" onChange={handleTextInputChange}
                             value={formData.symbol} size="3"/>
+            <FieldErrorMessage formErrors={formErrors} name="symbol"/>
           </Field>
           <Field name="symbol" className="mt-2">
             <Label>
@@ -268,6 +304,7 @@ export default function CreateToken() {
             </Label>
             <TextField.Root placeholder="e.g: 9" type="number" name="decimals" onChange={handleTextInputChange}
                             value={formData.decimals} size="3"/>
+            <FieldErrorMessage formErrors={formErrors} name="decimals"/>
           </Field>
           <Field name="symbol" className="mt-2">
             <Label>
@@ -276,6 +313,7 @@ export default function CreateToken() {
             <TextField.Root placeholder="e.g: 100,000,000" type="number" name="total_supply"
                             onChange={handleTextInputChange}
                             value={formData.total_supply} size="3"/>
+            <FieldErrorMessage formErrors={formErrors} name="total_supply"/>
           </Field>
           <Field name="description" className="mt-2">
             <Label>
@@ -284,6 +322,7 @@ export default function CreateToken() {
             <TextArea
                 placeholder="e.g: This is a utility token used within [place], you will receive this token once you do X."
                 name="description" onChange={handleTextInputChange} value={formData.description} size="3"/>
+            <FieldErrorMessage formErrors={formErrors} name="description"/>
           </Field>
           <Field name="token mint account">
             <p className="mb-2 mt-2">
@@ -331,8 +370,12 @@ export default function CreateToken() {
               Token image
             </Label>
             <TokenImage ref={tokenImageRef} error={formErrors.image}/>
+            <div className="my-2"/>
+            <FieldErrorMessage name="image" formErrors={formErrors}/>
           </Field>
-          <Button disabled={!wallet?.connected} className="w-full mt-4" size="4" type="submit">Submit</Button>
+          <Button disabled={isFormDisabled}
+                  loading={isLoading}
+                  className="w-full mt-4" size="4" type="submit">Submit</Button>
         </Form>
 
       </Container>

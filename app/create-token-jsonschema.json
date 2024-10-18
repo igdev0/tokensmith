@@ -18,6 +18,8 @@
     },
     "description": {
       "type": "string",
+      "minLength": 5,
+      "maxLength": 140,
       "description": "Description of the token"
     },
     "image": {
@@ -33,24 +35,15 @@
       "type": "integer",
       "minimum": 0,
       "description": "Total supply of the token"
-    },
-    "mint_authority": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Account or authority responsible for minting the token"
-    },
-    "mint_freeze_authority": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Account or authority responsible for freezing the token"
     }
   },
   "required": [
     "name",
+    "description",
     "symbol",
     "decimals",
-    "total_supply",
-    "mint_authority"
+    "image",
+    "total_supply"
   ],
   "additionalProperties": false
 }
