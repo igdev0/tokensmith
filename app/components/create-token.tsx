@@ -8,15 +8,17 @@ import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
 import {
   createAssociatedTokenAccountInstruction,
+  createInitializeMetadataPointerInstruction,
   createInitializeMintInstruction,
   createMintToInstruction,
+  ExtensionType,
   getAssociatedTokenAddress,
-  getMinimumBalanceForRentExemptMint,
-  MINT_SIZE,
+  getMintLen,
+  LENGTH_SIZE,
   TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
+  TYPE_SIZE,
 } from '@solana/spl-token';
-import {createInitializeInstruction} from "@solana/spl-token-metadata";
+import {createInitializeInstruction, pack, TokenMetadata} from "@solana/spl-token-metadata";
 import {RpcConfigContext} from '@/app/context/config';
 import {Connection, Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
 
@@ -72,11 +74,13 @@ const INITIAL_DATA = {
   symbol: "",
   description: "",
   image: "",
+  metadata_uri: "",
   decimals: 0,
   total_supply: 0,
   mint_authority: "",
   mint_freeze_authority: "",
 };
+
 
 const INITIAL_ERRORS = {
   name: null,
@@ -93,6 +97,7 @@ type FormFieldsError = {
   name: FieldError,
   symbol: FieldError,
   description: FieldError,
+  metadata_uri: FieldError,
   image: FieldError,
   mint_authority: FieldError,
   mint_freeze_authority: FieldError,
@@ -103,46 +108,71 @@ function removeRef(data: object) {
 }
 
 const validator = new Ajv({allErrors: true}).addSchema(createTokenJSONSchema);
-const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 
 function useCreateTokenTransaction() {
-  return async (connection: Connection, mint: Keypair, decimals: number, totalSupply: number, payer: PublicKey, hasTokenFreeze = false) => {
+  return async (connection: Connection, mint: Keypair, formData: typeof INITIAL_DATA, payer: PublicKey, hasTokenFreeze = false) => {
     const recentBlockhash = await connection.getLatestBlockhash();
     const freezeAuthority = hasTokenFreeze ? payer : null;
     const transaction = new Transaction({recentBlockhash: recentBlockhash.blockhash, feePayer: payer});
+    const mintLen = getMintLen([ExtensionType.MetadataPointer]);
 
+    const metadata: TokenMetadata = {
+      mint: mint.publicKey,
+      name: formData.name,
+      symbol: formData.symbol,
+      uri: formData.metadata_uri,
+      additionalMetadata: [],
+    };
+
+    const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
+    const mintLamports = await connection.getMinimumBalanceForRentExemption(mintLen + metadataLen);
+
+    const accountCreationInstruction = SystemProgram.createAccount({
+      fromPubkey: payer,
+      newAccountPubkey: mint.publicKey,
+      lamports: mintLamports,
+      space: mintLen,
+      programId: TOKEN_2022_PROGRAM_ID,
+    });
+
+    const metadataPointerInstruction = createInitializeMetadataPointerInstruction(mint.publicKey, payer, mint.publicKey, TOKEN_2022_PROGRAM_ID);
 
     const createMintInstruction = createInitializeMintInstruction(
         mint.publicKey,
-        decimals,
+        formData.decimals,
         payer,
         freezeAuthority,
-        TOKEN_PROGRAM_ID
+        TOKEN_2022_PROGRAM_ID
     );
 
     const associatedTokenAccount = await getAssociatedTokenAddress(
         mint.publicKey,
-        payer
+        payer,
+        false,
+        TOKEN_2022_PROGRAM_ID
     );
     const createTokenAccountInstruction = createAssociatedTokenAccountInstruction(
         payer,
         associatedTokenAccount,
         payer,
         mint.publicKey,
+        TOKEN_2022_PROGRAM_ID
     );
 
-    const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, totalSupply);
+    const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, formData.total_supply, [], TOKEN_2022_PROGRAM_ID);
 
-    const accountCreationInstruction = SystemProgram.createAccount({
-      fromPubkey: payer,
-      lamports: await getMinimumBalanceForRentExemptMint(connection),
-      space: MINT_SIZE,
-      newAccountPubkey: mint.publicKey,
-      programId: TOKEN_PROGRAM_ID,
+    const metadataInitInstruction = createInitializeInstruction({
+      name: formData.name,
+      symbol: formData.symbol,
+      mint: mint.publicKey,
+      programId: TOKEN_2022_PROGRAM_ID,
+      uri: metadata.uri,
+      updateAuthority: payer,
+      metadata: mint.publicKey,
+      mintAuthority: payer,
     });
 
-
-    transaction.add(accountCreationInstruction, createMintInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
+    transaction.add(accountCreationInstruction, metadataPointerInstruction, createMintInstruction, metadataInitInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
 
     return transaction;
   };
@@ -162,41 +192,23 @@ export default function CreateToken() {
     if (!wallet.publicKey || !wallet?.signTransaction) {
       return;
     }
+
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
-    const createdTokenTransaction = await createSplTokenTransaction(connection, mint, formData.decimals, formData.total_supply, wallet.publicKey, hasTokenFreeze);
-
-
     const body = new FormData();
     body.set("file", image);
     body.set("name", formData.name);
     body.set("description", formData.description);
     body.set("symbol", formData.symbol);
-
-    // const res = await fetch("/api/upload-metadata", {
-    //   method: "POST",
-    //   body: body as keyof object
-    // });
-
-    // const responseJsonData: { message: string, uri: string } = await res.json();
-    const [metadataAccount] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("metadata"),
-          mint.publicKey.toBuffer(),
-        ],
-        TOKEN_METADATA_PROGRAM_ID
-    );
-    const metadataInitInstruction = createInitializeInstruction({
-      name: formData.name,
-      symbol: formData.symbol,
-      mint: mint.publicKey,
-      programId: TOKEN_2022_PROGRAM_ID,
-      uri: "https://someuri.com",
-      updateAuthority: wallet.publicKey,
-      metadata: metadataAccount,
-      mintAuthority: wallet.publicKey,
+    const response = await fetch("/api/upload-metadata", {
+      method: "POST",
+      body: body as FormData
     });
-    createdTokenTransaction.add(metadataInitInstruction);
+
+    const responseData: { uri: string, message: string } = await response.json();
+    formData.metadata_uri = responseData.uri;
+
+    const createdTokenTransaction = await createSplTokenTransaction(connection, mint, formData, wallet.publicKey, hasTokenFreeze);
 
     if (wallet.signTransaction) {
       const signedTx = await wallet.signTransaction(createdTokenTransaction);
