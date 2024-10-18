@@ -12,6 +12,9 @@ metadata using spl-2022.
 
 1. Clone this repo
 2. `npm install`
-3. `npm run dev`
+3. `cp .env.example .env` // setup the environment variables
+4. Go to [pinata](https://pinata.cloud/) and create account & generate a API key + secret, then copy them in `.env`
+   file
+5. `npm run dev`
 
-
+Made with ❤️, <br/> By Dorultan Ianos
