@@ -1,5 +1,5 @@
 "use client";
-import {Button, Container, Flex, Heading, Switch, Text, TextArea, TextField} from '@radix-ui/themes';
+import {Button, Code, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
 import {useWallet, WalletProvider} from '@solana/wallet-adapter-react';
 import SelectWalletButton from '@/app/components/select-wallet-button';
@@ -24,7 +24,9 @@ import {createInitializeInstruction, pack, TokenMetadata} from "@solana/spl-toke
 import {RpcConfigContext} from '@/app/context/config';
 import {Connection, Keypair, PublicKey, SystemProgram, Transaction} from '@solana/web3.js';
 import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
-
+import * as Dialog from "@radix-ui/react-dialog";
+import {Cross2Icon} from '@radix-ui/react-icons';
+import Link from 'next/link';
 
 function TokenImageComponent(props, ref: Ref<{ getImage: () => File }>,) {
   const [file, setFile] = useState<File>(null);
@@ -187,9 +189,11 @@ export default function CreateToken() {
   const [hasTokenFreeze, setHasTokenFreeze] = useState<boolean>(false);
   const {connection} = useContext(RpcConfigContext);
   const wallet = useWallet();
+  const [tokenDetails, setTokenDetails] = useState<{ name: string, secret: string, tx_hash: string }>();
   const [formErrors, setFormErrors] = useState<FormFieldsError>(removeRef(INITIAL_ERRORS));
   const createSplTokenTransaction = useCreateTokenTransaction();
   const [isLoading, setIsLoading] = useState(false);
+  const [successPopupOpen, setSuccessPopupOpen] = useState(false);
 
   const isFormDisabled = useMemo(() => {
     return !wallet.publicKey || isLoading;
@@ -210,6 +214,7 @@ export default function CreateToken() {
       decimals: parseInt(formData.decimals),
       total_supply: parseInt(formData.total_supply)
     });
+
     const currentErrors = removeRef(INITIAL_ERRORS);
     if (validator.errors) {
       for (const error of validator.errors) {
@@ -217,6 +222,7 @@ export default function CreateToken() {
         currentErrors[name] = error.message;
       }
     }
+
     if (!image) {
       currentErrors.image = "This field is required";
     }
@@ -250,14 +256,8 @@ export default function CreateToken() {
         signedTx.partialSign(mint);
         const serialisedTx = signedTx.serialize();
         const txHash = await connection.sendRawTransaction(serialisedTx);
-        formFeedback.current?.pushMessage({
-          title: "Token created 🚀",
-          duration: 10000,
-          variant: "success",
-          description: `
-            <p>Congrats 🎉. your token was created, is a matter of time before the token will show up in your wallet, check <a class="text-purple-800 underline" href="https://explorer.solana.com/tx/account/${txHash}?cluster=${rpcConfig.chain}" target="_blank">this link for more details.</a> </p>
-          `
-        });
+        setTokenDetails({name: formData.name, tx_hash: txHash, secret: mint.secretKey.toString()});
+        setSuccessPopupOpen(true);
         setFormData(removeRef(INITIAL_DATA));
         // @todo: handle success
       } catch (err) {
@@ -289,6 +289,42 @@ export default function CreateToken() {
   return (
 
       <Container className="justify-center">
+        <Dialog.Root open={successPopupOpen}>
+          <Dialog.Portal>
+            <Theme>
+              <Dialog.Overlay
+                  className="fixed dark:bg-overlay-dark light:bg-overlay-light left-0 right-0 bottom-0 top-0 flex items-center">
+                <Dialog.Content
+                    className="max-w-lg w-full light:bg-white dark:bg-gray-950 p-4 rounded-l-lg mx-auto relative shadow-2xl shadow-green-800">
+                  <Theme>
+                    <Dialog.Title className="font-semibold text-3xl mb-2">
+                      Token creation succeded 🚀
+                    </Dialog.Title>
+                    <Dialog.Description className="text-base mb-2">
+                      <p>Please store mint's secret key securely, you will need this if you want to modify token mint
+                        ownership, mint new tokens and more.</p>
+                    </Dialog.Description>
+                    <Flex
+                        className="items-center gap-2 mb-2">🔐 <Code>{tokenDetails?.secret ?? ""}</Code></Flex>
+                    <Flex className="items-center gap-2">
+                      #️⃣ <Link
+                        className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer cursor-pointer"
+                        variant="outline"
+                        href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
+                        target="_blank">View transaction</Link>
+                    </Flex>
+                    <Dialog.Trigger className="absolute top-0.5 right-0.5">
+                      <Cross2Icon/>
+                    </Dialog.Trigger>
+                    <Flex className="gap-2 flex-col mt-2">
+
+                    </Flex>
+                  </Theme>
+                </Dialog.Content>
+              </Dialog.Overlay>
+            </Theme>
+          </Dialog.Portal>
+        </Dialog.Root>
         <Heading className="mt-5" size="8">Create token</Heading>
         <Text>
           <p className="max-w-xl">
