@@ -1,8 +1,7 @@
 "use client";
 import {Button, Code, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
-import {useWallet, WalletProvider} from '@solana/wallet-adapter-react';
-import SelectWalletButton from '@/app/components/select-wallet-button';
+import {useWallet} from '@solana/wallet-adapter-react';
 import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
@@ -375,14 +374,6 @@ export default function CreateToken() {
                 placeholder="e.g: This is a utility token used within [place], you will receive this token once you do X."
                 name="description" onChange={handleTextInputChange} value={formData.description} size="3"/>
             <FieldErrorMessage formErrors={formErrors} name="description"/>
-          </Field>
-          <Field name="token mint account">
-            <p className="mb-2 mt-2">
-              Token mint authority
-            </p>
-            <WalletProvider wallets={[]} autoConnect={true}>
-              <SelectWalletButton/>
-            </WalletProvider>
           </Field>
           <Field name="token mint account" className="mt-4">
             <Flex align="baseline" gapX="2">
