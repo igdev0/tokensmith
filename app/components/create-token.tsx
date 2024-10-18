@@ -113,16 +113,16 @@ function useCreateTokenTransaction() {
 
 
     const createMintInstruction = createInitializeMintInstruction(
-        mint.publicKey,  // The mint public key
-        decimals,               // Decimals (e.g., 6 for fungible tokens)
-        payer, // Mint authority
-        freezeAuthority,            // Freeze authority (optional, can be null)
+        mint.publicKey,
+        decimals,
+        payer,
+        freezeAuthority,
         TOKEN_PROGRAM_ID
-    );  // Step 3: Create associated token
+    );
 
     const associatedTokenAccount = await getAssociatedTokenAddress(
-        mint.publicKey,  // Mint of the token
-        payer  // Owner of the associated token account
+        mint.publicKey,
+        payer
     );
     const createTokenAccountInstruction = createAssociatedTokenAccountInstruction(
         payer,
@@ -130,7 +130,7 @@ function useCreateTokenTransaction() {
         payer,
         mint.publicKey,
     );
-    // const totalSupplyTransaction = create
+
     const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, totalSupply);
 
     const accountCreationInstruction = SystemProgram.createAccount({
@@ -182,7 +182,6 @@ export default function CreateToken() {
     const [metadataAccount] = PublicKey.findProgramAddressSync(
         [
           Buffer.from("metadata"),
-          // TOKEN_METADATA_PROGRAM_ID.toBuffer(),
           mint.publicKey.toBuffer(),
         ],
         TOKEN_METADATA_PROGRAM_ID
