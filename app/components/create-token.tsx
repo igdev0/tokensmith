@@ -7,11 +7,12 @@ import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useRef, use
 import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
 import {
+  AuthorityType,
   createAssociatedTokenAccountInstruction,
   createInitializeMetadataPointerInstruction,
   createInitializeMintInstruction,
   createMintToInstruction,
-  createRevokeInstruction,
+  createSetAuthorityInstruction,
   ExtensionType,
   getAssociatedTokenAddress,
   getMintLen,
@@ -161,7 +162,7 @@ function useCreateTokenTransaction() {
         TOKEN_2022_PROGRAM_ID
     );
 
-    const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, formData.total_supply, [], TOKEN_2022_PROGRAM_ID);
+    const mintTotalSupplyInstruction = createMintToInstruction(mint.publicKey, associatedTokenAccount, payer, formData.total_supply * Math.pow(10, formData.decimals), [], TOKEN_2022_PROGRAM_ID);
 
     const metadataInstruction = createInitializeInstruction({
       name: formData.name,
@@ -177,7 +178,7 @@ function useCreateTokenTransaction() {
     transaction.add(accountCreationInstruction, metadataPointerInstruction, createMintInstruction, metadataInstruction, createTokenAccountInstruction, mintTotalSupplyInstruction);
 
     if (formData.revoke_authority) {
-      const revokeAuthorityInstruction = createRevokeInstruction(payer, payer);
+      const revokeAuthorityInstruction = createSetAuthorityInstruction(mint.publicKey, payer, AuthorityType.MintTokens, null, [], TOKEN_2022_PROGRAM_ID);
       transaction.add(revokeAuthorityInstruction);
     }
 
@@ -199,7 +200,6 @@ export default function CreateToken() {
     if (!wallet.publicKey || !wallet?.signTransaction) {
       return;
     }
-
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
     const body = new FormData();
