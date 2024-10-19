@@ -67,7 +67,7 @@ export default function CreateToken() {
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
     const body = new FormData();
-    const blob = new Blob([JSON.stringify(mint.secretKey)], {type: "application/json"});
+    const blob = new Blob([`[${mint.secretKey.toString()}]`], {type: "application/json"});
     const mint_secret_url = URL.createObjectURL(blob);
 
     validator.validate(createTokenJSONSchema, {
@@ -185,7 +185,8 @@ export default function CreateToken() {
                           href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
                           target="_blank"><ExternalLinkIcon/> View transaction</Link>
                     </Flex>
-                    <Dialog.Trigger className="absolute top-0.5 right-0.5 cursor-pointer">
+                    <Dialog.Trigger className="absolute top-0.5 right-0.5 cursor-pointer"
+                                    onClick={() => setSuccessPopupOpen(false)}>
                       <Cross2Icon width={33} height={33}/>
                     </Dialog.Trigger>
                   </Theme>
