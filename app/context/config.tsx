@@ -3,7 +3,6 @@ import {createContext, useMemo, useState} from 'react';
 import {clusterApiUrl, Connection} from '@solana/web3.js';
 
 export type RpcChain = 'devnet' | 'testnet' | 'mainnet-beta';
-export type ExplorerClusterName = 'devnet' | 'mainnet-beta' | 'testnet';
 
 export interface RpcConfigContextType {
   chain: RpcChain;
@@ -43,7 +42,7 @@ export default function RpcContextProvider({children}) {
 
   return (
       <RpcConfigContext.Provider value={{chain, setChain, ...rest}}>
-  {children}
-  </RpcConfigContext.Provider>
-);
+        {children}
+      </RpcConfigContext.Provider>
+  );
 }

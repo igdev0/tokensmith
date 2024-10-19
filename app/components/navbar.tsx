@@ -3,8 +3,10 @@ import {GitHubLogoIcon, MoonIcon, SunIcon} from '@radix-ui/react-icons';
 import SelectWalletButton from '@/app/components/select-wallet-button';
 import Link from 'next/link';
 import Logo from '@/app/components/logo';
+import NetworkSelector from '@/app/components/network-selector';
 
 const ICON_SIZE = 24;
+
 export default function Navbar() {
   const theme = useThemeContext();
   const toggleAppereance = () => {
@@ -15,6 +17,7 @@ export default function Navbar() {
            style={{boxSizing: "content-box"}}>
         <Logo/>
         <div className="flex justify-center items-center gap-4">
+          <NetworkSelector/>
           <IconButton asChild={true} variant="ghost" size="4" color="gray">
             <Link
                 target="_blank" rel="_noopener"
