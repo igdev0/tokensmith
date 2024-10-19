@@ -161,7 +161,7 @@ export default function CreateToken() {
                         className="items-center gap-2 mb-2">🔐 <Code>{tokenDetails?.secret ?? ""}</Code></Flex>
                     <Flex className="items-center gap-2">
                       #️⃣ <Link
-                        className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer cursor-pointer"
+                        className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer"
                         variant="outline"
                         href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
                         target="_blank">View transaction</Link>
