@@ -1,5 +1,11 @@
 import {FormEvent, forwardRef, Ref, useImperativeHandle, useState} from 'react';
 
+export interface TokenImageRef {
+  getImage(): File;
+
+  clear();
+}
+
 export default forwardRef(function TokenImage(props, ref: Ref<{ getImage: () => File }>,) {
   const [file, setFile] = useState<File>(null);
   const [preview, setPreview] = useState<string>();
@@ -13,9 +19,13 @@ export default forwardRef(function TokenImage(props, ref: Ref<{ getImage: () => 
     };
   };
 
-  useImperativeHandle(ref, () => ({
+  useImperativeHandle(ref, (): TokenImageRef => ({
     getImage() {
       return file;
+    },
+    clear() {
+      setFile(null);
+      setPreview(null);
     }
   }));
 

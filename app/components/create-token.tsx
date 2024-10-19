@@ -11,7 +11,7 @@ import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
 import * as Dialog from "@radix-ui/react-dialog";
 import {CheckIcon, Cross2Icon, DownloadIcon, ExternalLinkIcon} from '@radix-ui/react-icons';
 import Link from 'next/link';
-import TokenImage from '@/app/components/token-image';
+import TokenImage, {TokenImageRef} from '@/app/components/token-image';
 import {removeRef} from '@/app/utils';
 import FieldErrorMessage, {FormFieldsError} from '@/app/components/field-error-message';
 import useCreateTokenTransaction from '@/app/hooks/use-create-token-transaction';
@@ -35,7 +35,7 @@ const INITIAL_ERRORS = {
 };
 
 export default function CreateToken() {
-  const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
+  const tokenImageRef = useRef<TokenImageRef | null>(null);
   const formFeedback = useRef<FormFeedbackRef>();
   const rpcConfig = useContext(RpcConfigContext);
   const [formData, setFormData] = useState<typeof INITIAL_DATA>(removeRef(INITIAL_DATA));
@@ -125,6 +125,7 @@ export default function CreateToken() {
         });
         setSuccessPopupOpen(true);
         setFormData(removeRef(INITIAL_DATA));
+        tokenImageRef.current?.clear();
         // @todo: handle success
       } catch (err) {
         // Possible failure:
