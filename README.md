@@ -4,7 +4,8 @@
 
 ## Overview
 
-This is a dApp that allows you authenticate with your solana wallet and fill up a form in browser to create a solana token with
+This is a dApp that allows you authenticate with your solana wallet and fill up a form in browser to create a solana
+token with
 metadata using spl-2022.
 
 ### Features
@@ -25,4 +26,8 @@ account signed in) from minting new tokens. <br/>
    file
 5. `npm run dev`
 
-Made with ❤️, <br/> By Dorultan Ianos
+## License
+
+This repository and the code inside it is licensed under the MIT License. Read [LICENSE](LICENSE) for more information.
+
+Made with ❤️
