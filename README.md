@@ -17,6 +17,8 @@ the backend and uploaded to the [pinata cloud](https://pinata.cloud).<br/>
 **Token revoke authority:** User can enable the revoke the mint authority, which will disable the authority (current
 account signed in) from minting new tokens. <br/>
 
+**Note**: New features are listed in the kanban board [here](https://github.com/users/igdev0/projects/4).
+
 ## Setting up
 
 1. Clone this repo
