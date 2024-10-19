@@ -4,7 +4,7 @@
 
 ## Overview
 
-This dApp allows you authenticate with your solana wallet and fill up a form in browser to create a solana token with
+This is a dApp that allows you authenticate with your solana wallet and fill up a form in browser to create a solana token with
 metadata using spl-2022.
 
 ### Features
