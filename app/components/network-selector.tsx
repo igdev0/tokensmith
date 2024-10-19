@@ -20,7 +20,7 @@ export default function NetworkSelector() {
       <Select.Root dir="ltr" value={config.chain} onValueChange={handleValueChange}>
         <Theme>
           <Select.Trigger variant="surface" asChild>
-            <Button className="cursor-pointer"><GlobeIcon/>{VALUES[config.chain]}<Select.Icon/></Button>
+            <Button className="cursor-pointer" size="4"><GlobeIcon/>{VALUES[config.chain]}<Select.Icon/></Button>
           </Select.Trigger>
           <Select.Content className="bg-gray-950 p-2 shadow-2xl shadow-purple-500 mt-2 rounded-lg">
             {
