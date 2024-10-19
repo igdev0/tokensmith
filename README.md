@@ -1,6 +1,5 @@
-<div style="display: flex; align-items: center; gap: 10px;">
-    <img src="./app/assets/icon.png" width="44" height="44"style="margin-top: 20px;">
-    <h1>Solana Token creator</h1>
+<div>
+    <img src="./app/assets/logo.svg" width="420" style="margin-top: 40px">
 </div>
 
 ## Overview
