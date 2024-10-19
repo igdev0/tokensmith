@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Solana Coin Generator",
+  title: "Tokensmith",
   description: "A solana token generator based on program 2022",
 };
 
