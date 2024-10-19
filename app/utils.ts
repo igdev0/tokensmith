@@ -3,3 +3,8 @@ export function truncatePubKey(str: string) {
   const secondPart = str.slice(-4);
   return `${firstPart}..${secondPart}`;
 }
+
+
+export function removeRef(data: object) {
+  return JSON.parse(JSON.stringify(data));
+}

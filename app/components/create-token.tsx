@@ -27,6 +27,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {Cross2Icon} from '@radix-ui/react-icons';
 import Link from 'next/link';
 import TokenImage from '@/app/components/token-image';
+import {removeRef} from '@/app/utils';
 
 const INITIAL_DATA = {
   name: "",
@@ -55,10 +56,6 @@ type FormFieldsError = {
   description: FieldError,
   metadata_uri: FieldError,
   image: FieldError,
-}
-
-function removeRef(data: object) {
-  return JSON.parse(JSON.stringify(data));
 }
 
 
