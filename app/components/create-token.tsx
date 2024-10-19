@@ -58,7 +58,6 @@ type FormFieldsError = {
   image: FieldError,
 }
 
-
 function useCreateTokenTransaction() {
   return async (connection: Connection, mint: Keypair, formData: typeof INITIAL_DATA, payer: PublicKey, hasTokenFreeze = false) => {
     const recentBlockhash = await connection.getLatestBlockhash();
@@ -89,7 +88,7 @@ function useCreateTokenTransaction() {
 
     const createMintInstruction = createInitializeMintInstruction(
         mint.publicKey,
-        formData.decimals,
+        formData.decimals as number,
         payer,
         freezeAuthority,
         TOKEN_2022_PROGRAM_ID
