@@ -1,5 +1,5 @@
 "use client";
-import {Button, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
+import {Button, Container, Flex, Heading, Spinner, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {FormEvent, useContext, useMemo, useRef, useState} from 'react';
@@ -9,7 +9,7 @@ import {RpcConfigContext} from '@/app/context/config';
 import {Keypair} from '@solana/web3.js';
 import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
 import * as Dialog from "@radix-ui/react-dialog";
-import {Cross2Icon, DownloadIcon, ExternalLinkIcon} from '@radix-ui/react-icons';
+import {CheckIcon, Cross2Icon, DownloadIcon, ExternalLinkIcon} from '@radix-ui/react-icons';
 import Link from 'next/link';
 import TokenImage from '@/app/components/token-image';
 import {removeRef} from '@/app/utils';
@@ -51,7 +51,7 @@ export default function CreateToken() {
   const [formErrors, setFormErrors] = useState<FormFieldsError>(removeRef(INITIAL_ERRORS));
   const createSplTokenTransaction = useCreateTokenTransaction();
   const [isLoading, setIsLoading] = useState(false);
-  const [successPopupOpen, setSuccessPopupOpen] = useState(true);
+  const [successPopupOpen, setSuccessPopupOpen] = useState(false);
 
   const isFormDisabled = useMemo(() => {
     return !wallet.publicKey || isLoading;
@@ -287,10 +287,9 @@ export default function CreateToken() {
             <FieldErrorMessage name="image" formErrors={formErrors}/>
           </Field>
           <Button disabled={isFormDisabled}
-                  loading={isLoading}
-                  className="w-full mt-4" size="4" type="submit">Submit</Button>
-        </Form><Button asChild>
-      </Button>
+                  className="w-full" size="4" type="submit">{isLoading ? <Spinner size="2"/> :
+              <CheckIcon width={22} height={22}/>}Submit</Button>
+        </Form>
         <FormFeedback ref={formFeedback}/>
       </Container>
   );
