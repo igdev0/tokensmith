@@ -8,7 +8,13 @@ const VALUES = {
   "mainnet-beta": "Mainnet Beta",
   "devnet": "Devnet",
   "testnet": "Testnet",
-};
+} as const;
+
+type Value = keyof typeof VALUES;
+
+function getNetwork(v: Value) {
+  return VALUES[v];
+}
 
 export default function NetworkSelector() {
   const config = useContext(RpcConfigContext);
@@ -24,10 +30,10 @@ export default function NetworkSelector() {
           </Select.Trigger>
           <Select.Content className="bg-gray-950 p-2 shadow-2xl shadow-purple-500 mt-2 rounded-lg">
             {
-              Object.keys(VALUES).map((item) => (
+              Object.keys(VALUES).map((item: Value) => (
                   <Select.Item key={item}
                                className={`cursor-pointer hover:text-purple-300 ${item === config.chain ? "text-purple-300" : "text-white"}`}
-                               value={item}>{VALUES[item]}</Select.Item>
+                               value={item}>{getNetwork(item)}</Select.Item>
               ))
             }
           </Select.Content>
