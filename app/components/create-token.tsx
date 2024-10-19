@@ -2,7 +2,7 @@
 import {Button, Code, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
 import {useWallet} from '@solana/wallet-adapter-react';
-import {FormEvent, forwardRef, Ref, useContext, useImperativeHandle, useMemo, useRef, useState} from 'react';
+import {FormEvent, useContext, useMemo, useRef, useState} from 'react';
 import createTokenJSONSchema from '@/app/create-token-jsonschema.json';
 import Ajv from 'ajv';
 import {
@@ -26,39 +26,7 @@ import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
 import * as Dialog from "@radix-ui/react-dialog";
 import {Cross2Icon} from '@radix-ui/react-icons';
 import Link from 'next/link';
-
-function TokenImageComponent(props, ref: Ref<{ getImage: () => File }>,) {
-  const [file, setFile] = useState<File>(null);
-  const [preview, setPreview] = useState<string>();
-  const handleFileChange = (event: FormEvent<HTMLInputElement>) => {
-    const file = event.currentTarget.files.item(0);
-    setFile(file);
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-  };
-
-  useImperativeHandle(ref, () => ({
-    getImage() {
-      return file;
-    }
-  }));
-
-  return (
-      <>
-        <div
-            className="relative border-2 border-dashed text-center p-4 mt-1 flex gap-2 justify-center items-center">
-          <input className="opacity-0 absolute w-full h-full cursor-pointer" type="file" onChange={handleFileChange}/>
-          {file ? <img className="aspect-square w-10" src={preview}/> : null}
-          {file?.name ?? "No image uploaded"}
-        </div>
-      </>
-  );
-}
-
-const TokenImage = forwardRef(TokenImageComponent);
+import TokenImage from '@/app/components/token-image';
 
 const INITIAL_DATA = {
   name: "",
