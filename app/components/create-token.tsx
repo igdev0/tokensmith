@@ -182,7 +182,7 @@ export default function CreateToken() {
                       <Link
                           className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer flex-1"
                           variant="outline"
-                          href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
+                          href={`https://explorer.solana.com/tx/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
                           target="_blank"><ExternalLinkIcon/> View transaction</Link>
                     </Flex>
                     <Dialog.Trigger className="absolute top-0.5 right-0.5 cursor-pointer"
