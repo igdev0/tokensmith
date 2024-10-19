@@ -27,14 +27,12 @@ export const INITIAL_DATA = {
   revoke_authority: false,
 };
 
-
 const INITIAL_ERRORS = {
   name: null,
   symbol: null,
   description: null,
   image: null,
 };
-
 
 export default function CreateToken() {
   const tokenImageRef = useRef<{ getImage: () => File } | null>(null);
