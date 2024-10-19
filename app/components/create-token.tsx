@@ -1,5 +1,5 @@
 "use client";
-import {Button, Code, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
+import {Button, Container, Flex, Heading, Switch, Text, TextArea, TextField, Theme} from '@radix-ui/themes';
 import {Field, Form, Label} from '@radix-ui/react-form';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {FormEvent, useContext, useMemo, useRef, useState} from 'react';
@@ -9,7 +9,7 @@ import {RpcConfigContext} from '@/app/context/config';
 import {Keypair} from '@solana/web3.js';
 import FormFeedback, {FormFeedbackRef} from '@/app/components/form-feedback';
 import * as Dialog from "@radix-ui/react-dialog";
-import {Cross2Icon} from '@radix-ui/react-icons';
+import {Cross2Icon, DownloadIcon, ExternalLinkIcon} from '@radix-ui/react-icons';
 import Link from 'next/link';
 import TokenImage from '@/app/components/token-image';
 import {removeRef} from '@/app/utils';
@@ -42,11 +42,16 @@ export default function CreateToken() {
   const [hasTokenFreeze, setHasTokenFreeze] = useState<boolean>(false);
   const {connection} = useContext(RpcConfigContext);
   const wallet = useWallet();
-  const [tokenDetails, setTokenDetails] = useState<{ name: string, secret: string, tx_hash: string }>();
+  const [tokenDetails, setTokenDetails] = useState<{
+    name: string,
+    tx_hash: string,
+    mint_secret_url: string,
+    mint_filename: string
+  }>();
   const [formErrors, setFormErrors] = useState<FormFieldsError>(removeRef(INITIAL_ERRORS));
   const createSplTokenTransaction = useCreateTokenTransaction();
   const [isLoading, setIsLoading] = useState(false);
-  const [successPopupOpen, setSuccessPopupOpen] = useState(false);
+  const [successPopupOpen, setSuccessPopupOpen] = useState(true);
 
   const isFormDisabled = useMemo(() => {
     return !wallet.publicKey || isLoading;
@@ -62,6 +67,9 @@ export default function CreateToken() {
     const image = tokenImageRef.current?.getImage();
     const mint = Keypair.generate();
     const body = new FormData();
+    const blob = new Blob([JSON.stringify(mint.secretKey)], {type: "application/json"});
+    const mint_secret_url = URL.createObjectURL(blob);
+
     validator.validate(createTokenJSONSchema, {
       ...formData,
       decimals: parseInt(formData.decimals),
@@ -109,7 +117,12 @@ export default function CreateToken() {
         signedTx.partialSign(mint);
         const serialisedTx = signedTx.serialize();
         const txHash = await connection.sendRawTransaction(serialisedTx);
-        setTokenDetails({name: formData.name, tx_hash: txHash, secret: mint.secretKey.toString()});
+        setTokenDetails({
+          name: formData.name,
+          tx_hash: txHash,
+          mint_secret_url,
+          mint_filename: `${formData.name}-mint.json`
+        });
         setSuccessPopupOpen(true);
         setFormData(removeRef(INITIAL_DATA));
         // @todo: handle success
@@ -153,25 +166,28 @@ export default function CreateToken() {
                     <Dialog.Title className="font-semibold text-3xl mb-2">
                       Token creation succeded 🚀
                     </Dialog.Title>
-                    <Dialog.Description className="text-base mb-2">
+                    <Dialog.Description className="text-base mb-4">
                       <p>Please store mint's secret key securely, you will need this if you want to modify token mint
                         ownership, mint new tokens and more.</p>
                     </Dialog.Description>
                     <Flex
-                        className="items-center gap-2 mb-2">🔐 <Code>{tokenDetails?.secret ?? ""}</Code></Flex>
-                    <Flex className="items-center gap-2">
-                      #️⃣ <Link
-                        className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer"
-                        variant="outline"
-                        href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
-                        target="_blank">View transaction</Link>
+                        className="items-center gap-2 mb-2 flex-1"><Button asChild>
+                      <a
+                          target="_blank"
+                          href={tokenDetails?.mint_secret_url ?? ""}
+                          download={`mint-${tokenDetails?.name ?? "noname"}.json`}>
+                        <DownloadIcon/>
+                        Download mint secret</a>
+                    </Button>
+                      <Link
+                          className="rt-reset rt-BaseButton rt-r-size-2 rt-variant-outline rt-Button cursor-pointer flex-1"
+                          variant="outline"
+                          href={`https://explorer.solana.com/tx/account/${tokenDetails?.tx_hash}?cluster=${rpcConfig.chain}`}
+                          target="_blank"><ExternalLinkIcon/> View transaction</Link>
                     </Flex>
-                    <Dialog.Trigger className="absolute top-0.5 right-0.5">
-                      <Cross2Icon/>
+                    <Dialog.Trigger className="absolute top-0.5 right-0.5 cursor-pointer">
+                      <Cross2Icon width={33} height={33}/>
                     </Dialog.Trigger>
-                    <Flex className="gap-2 flex-col mt-2">
-
-                    </Flex>
                   </Theme>
                 </Dialog.Content>
               </Dialog.Overlay>
@@ -273,7 +289,8 @@ export default function CreateToken() {
           <Button disabled={isFormDisabled}
                   loading={isLoading}
                   className="w-full mt-4" size="4" type="submit">Submit</Button>
-        </Form>
+        </Form><Button asChild>
+      </Button>
         <FormFeedback ref={formFeedback}/>
       </Container>
   );
