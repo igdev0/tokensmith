@@ -28,6 +28,7 @@ import {Cross2Icon} from '@radix-ui/react-icons';
 import Link from 'next/link';
 import TokenImage from '@/app/components/token-image';
 import {removeRef} from '@/app/utils';
+import FieldErrorMessage from '@/app/components/field-error-message';
 
 const INITIAL_DATA = {
   name: "",
@@ -47,16 +48,6 @@ const INITIAL_ERRORS = {
   description: null,
   image: null,
 };
-
-type FieldError = string | null;
-
-type FormFieldsError = {
-  name: FieldError,
-  symbol: FieldError,
-  description: FieldError,
-  metadata_uri: FieldError,
-  image: FieldError,
-}
 
 function useCreateTokenTransaction() {
   return async (connection: Connection, mint: Keypair, formData: typeof INITIAL_DATA, payer: PublicKey, hasTokenFreeze = false) => {
@@ -130,18 +121,6 @@ function useCreateTokenTransaction() {
 
     return transaction;
   };
-}
-
-function FieldErrorMessage({name, formErrors}: { name: string, formErrors: FormFieldsError }) {
-
-  if (!formErrors[name]) {
-    return null;
-  }
-  return (
-      <p className="text-red-500">
-        {formErrors[name]}
-      </p>
-  );
 }
 
 export default function CreateToken() {
