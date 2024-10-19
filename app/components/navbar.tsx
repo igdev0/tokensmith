@@ -1,7 +1,8 @@
-import {Heading, IconButton, useThemeContext} from '@radix-ui/themes';
+import {IconButton, useThemeContext} from '@radix-ui/themes';
 import {GitHubLogoIcon, MoonIcon, SunIcon} from '@radix-ui/react-icons';
 import SelectWalletButton from '@/app/components/select-wallet-button';
 import Link from 'next/link';
+import Logo from '@/app/components/logo';
 
 const ICON_SIZE = 24;
 export default function Navbar() {
@@ -12,7 +13,7 @@ export default function Navbar() {
   return (
       <nav className="flex w-full justify-between flex-wrap p-5 mx-auto"
            style={{boxSizing: "content-box"}}>
-        <Heading size="4">IGDev tools 🛠️</Heading>
+        <Logo/>
         <div className="flex justify-center items-center gap-4">
           <IconButton asChild={true} variant="ghost" size="4" color="gray">
             <Link

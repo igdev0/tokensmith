@@ -1,5 +1,5 @@
 <div>
-    <img src="./app/assets/logo.svg" width="420" style="margin-top: 40px">
+    <img src="public/logo.svg" width="420" style="margin-top: 40px">
 </div>
 
 ## Overview
