@@ -1,6 +1,6 @@
 type FieldError = string | null;
 
-type FormFieldsError = {
+export type FormFieldsError = {
   name: FieldError,
   symbol: FieldError,
   description: FieldError,
