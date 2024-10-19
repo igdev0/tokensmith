@@ -8,6 +8,10 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "author": {
+    "name": "Dorultan Ianos",
+    "email": "dorultanianos@gmail.com"
+  },
   "dependencies": {
     "@pinata/sdk": "^2.1.0",
     "@radix-ui/react-dialog": "^1.1.2",
