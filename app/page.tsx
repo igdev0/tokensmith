@@ -28,8 +28,8 @@ export default function Home() {
         <Main>
           <CreateToken/>
           <footer className="absolute bottom-2 right-0 left-0 w-full flex justify-center">
-            <small>Made with ❤️, by <a className="underline" href="https://github.com/igdev0" target="_blank"
-                                       rel="noreferrer">Igdev</a></small>
+            <small>Made with ❤️ by <a className="underline" href="https://github.com/igdev0" target="_blank"
+                                      rel="noreferrer">Igdev</a></small>
           </footer>
         </Main>
       </App>
