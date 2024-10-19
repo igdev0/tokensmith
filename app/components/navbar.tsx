@@ -17,7 +17,6 @@ export default function Navbar() {
            style={{boxSizing: "content-box"}}>
         <Logo/>
         <div className="flex justify-center items-center gap-4">
-          <NetworkSelector/>
           <IconButton asChild={true} variant="ghost" size="4" color="gray">
             <Link
                 target="_blank" rel="_noopener"
@@ -29,6 +28,7 @@ export default function Navbar() {
             {theme.appearance === "light" ? <MoonIcon width={ICON_SIZE} height={ICON_SIZE}/> :
                 <SunIcon width={ICON_SIZE} height={ICON_SIZE}/>}
           </IconButton>
+          <NetworkSelector/>
           <SelectWalletButton/>
         </div>
       </nav>
