@@ -20,6 +20,7 @@ export default function Navbar() {
           <IconButton asChild={true} variant="ghost" size="4" color="gray">
             <Link
                 target="_blank" rel="_noopener"
+                className="cursor-pointer"
                 href="https://github.com/igdev0/solana-token-creator">
               <GitHubLogoIcon width={ICON_SIZE} height={ICON_SIZE}/>
             </Link>
