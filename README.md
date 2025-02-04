@@ -13,6 +13,7 @@ metadata using spl-2022.
 **Wallet Auth**: User can authenticate using a Solana wallet e.g: Phantom.<br/>
 **Token metadata creation:** User can easily create token metadata, by filling the form, this data will be processed on
 the backend and uploaded to the [pinata cloud](https://pinata.cloud).<br/>
+
 **Token freeze authority:** User can enable the token freeze authority, it will always be the account signed in <br/>
 **Token revoke authority:** User can enable the revoke the mint authority, which will disable the authority (current
 account signed in) from minting new tokens. <br/>
